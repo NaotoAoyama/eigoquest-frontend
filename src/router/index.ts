@@ -17,6 +17,11 @@ const router = createRouter({
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
     },
+    {
+      path: '/quiz', // クイズページのURLパス
+      name: 'quiz', // ルートの名前
+      component: () => import('../views/QuizView.vue'),
+    },
   ],
 })
 
