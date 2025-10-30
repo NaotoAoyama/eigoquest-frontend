@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-// import axios from 'axios' // API実装後に使う
+import axios from 'axios'
 
 const username = ref('')
 const password = ref('')
@@ -9,6 +9,9 @@ const passwordConfirm = ref('')
 const errorMessage = ref<string | null>(null)
 const isLoading = ref(false)
 const router = useRouter()
+
+// Django APIのエンドポイントを定義
+const signupApiUrl = 'http://127.0.0.1:8000/accounts/api/signup/'
 
 const handleSignUp = async () => {
   if (password.value !== passwordConfirm.value) {
@@ -19,19 +22,35 @@ const handleSignUp = async () => {
   errorMessage.value = null
 
   try {
-    // --- ▼▼▼ 新規登録API (未実装) を呼び出す処理を後で追加 ▼▼▼ ---
-    // const response = await axios.post('http://127.0.0.1:8000/api/accounts/signup/', {
-    //   username: username.value,
-    //   password: password.value
-    // })
-    console.log('新規登録処理 (API未実装)')
-    alert('新規登録APIはまだ実装されていません。Django側accountsアプリのAPI化が必要です。') // 仮のアラート
-    // 登録成功したらログインページへ
-    // router.push('/login')
-    // --- ▲▲▲ ここまで ▲▲▲ ---
+    // 新規登録APIを呼び出す処理
+    const response = await axios.post(signupApiUrl, {
+      username: username.value,
+      password: password.value,
+      password_confirm: passwordConfirm.value,
+    })
+
+    // 登録成功 (201 Created)
+    console.log('新規登録成功:', response.data)
+
+    // 登録成功したらログインページへ自動遷移
+    router.push('/login')
   } catch (err) {
     console.error('Sign up failed:', err)
-    errorMessage.value = '登録中にエラーが発生しました。'
+    if (axios.isAxiosError(err) && err.response) {
+      // Django (DRF) からのバリデーションエラーを処理
+      const errors = err.response.data
+      if (errors.username) {
+        errorMessage.value = errors.username[0] // 例: "このユーザー名は既に使用されています。"
+      } else if (errors.password) {
+        errorMessage.value = `パスワードエラー: ${errors.password[0]}`
+      } else if (errors.password_confirm) {
+        errorMessage.value = errors.password_confirm[0] // 例: "パスワードが一致しません。"
+      } else {
+        errorMessage.value = '登録中にエラーが発生しました。 (詳細はコンソールを確認)'
+      }
+    } else {
+      errorMessage.value = '登録中に予期せぬエラーが発生しました。'
+    }
   } finally {
     isLoading.value = false
   }
