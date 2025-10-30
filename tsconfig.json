@@ -1,5 +1,16 @@
 {
   "files": [],
+  // ... (extends や include など、他の設定) ...
+
+  "compilerOptions": {
+    // ... (target, module など、他の設定) ...
+
+    // ▼▼▼ 以下の2項目が存在するか確認 ▼▼▼
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
   "references": [
     {
       "path": "./tsconfig.node.json"

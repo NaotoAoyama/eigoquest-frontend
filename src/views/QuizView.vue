@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue' // Vueのリアクティブ機能とライフサイクルフックをインポート
+import { ref, onMounted, reactive } from 'vue' // Vueのリアクティブ機能とライフサイクルフックをインポート
 import axios from 'axios' // axiosをインポート
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 // APIから取得した問題リストを保持するリアクティブ変数
 const questions = ref<any[]>([]) // 型は後でちゃんと定義するのが望ましい
@@ -10,29 +12,99 @@ const error = ref<string | null>(null) // エラーメッセージ
 // APIのエンドポイントURL (Django開発サーバー)
 const apiUrl = 'http://127.0.0.1:8000/api/quiz/'
 
+const submitApiUrl = 'http://127.0.0.1:8000/api/quiz/submit/' // 採点APIのURL
+
+// 変更前: const selectedAnswers = ref<{[key: number]: string}>({})
+// 変更後: ref ではなく 'reactive' を使う
+const selectedAnswers = reactive<{ [key: number]: string }>({})
+const router = useRouter() // routerインスタンスを取得
+const authStore = useAuthStore() // authストアを取得
+const isSubmitting = ref(false) // 送信中フラグ
+
 // コンポーネントがマウント（表示）された時にAPIを叩く
 onMounted(async () => {
   try {
-    // axios で GET リクエストを送信
-    // withCredentials: true は、Djangoのログインセッションを使うために必要（後でトークン認証に変更）
-    const response = await axios.get(apiUrl, { withCredentials: true })
-    questions.value = response.data // 取得したデータを questions に格納
+    // --- 変更点: axios.get に認証ヘッダーを追加 ---
+    const response = await axios.get(apiUrl, {
+      // withCredentials: true は削除し、トークン認証を使う
+      headers: authStore.authHeader, // Piniaストアから 'Authorization: Bearer <token>' を取得
+    })
+    questions.value = response.data
+    // 解答保持用オブジェクトを初期化
+    // 変更前: questions.value.forEach(q => selectedAnswers.value[q.id] = '');
+    // 変更後: reactive は .value が不要
+    questions.value.forEach((q) => (selectedAnswers[q.id] = ''))
   } catch (err: any) {
     if (axios.isAxiosError(err)) {
-      if (err.response?.status === 403) {
+      // --- 変更点: 403ではなく401 (Unauthorized) をチェック ---
+      if (err.response?.status === 401) {
         error.value = 'クイズを開始するにはログインが必要です。'
-        // ここでログインページへリダイレクトする処理を追加予定
+        router.push('/login') // 401ならログインページへ強制遷移
       } else {
         error.value = `データの取得に失敗しました: ${err.message}`
       }
     } else {
       error.value = '予期せぬエラーが発生しました。'
     }
-    console.error(err) // コンソールにエラー詳細を出力
+    console.error(err)
   } finally {
-    loading.value = false // ローディング完了
+    loading.value = false
   }
 })
+
+const submitAnswers = async () => {
+  // 変更前: console.log('採点ボタンクリック時の selectedAnswers:', selectedAnswers.value);
+  // 変更後: reactive は .value が不要
+  console.log('採点ボタンクリック時の selectedAnswers:', selectedAnswers)
+
+  isSubmitting.value = true
+  error.value = null // 前のエラーをクリア
+
+  // selectedAnswers をAPIが期待する形式に変換
+  // 変更前: const answersPayload = Object.entries(selectedAnswers.value)
+  // 変更後: reactive は .value が不要
+  const answersPayload = Object.entries(selectedAnswers)
+    .filter(([id, answer]) => answer) // 未選択のものを除外 (required属性があるので基本不要だが念のため)
+    .map(([id, answer]) => ({
+      question_id: parseInt(id), // IDを数値に
+      selected_answer: answer,
+    }))
+
+  const answeredCount = answersPayload.length
+  const totalQuestions = questions.value.length
+  console.log(`チェック: 解答済み ${answeredCount} / 全 ${totalQuestions} 問`) // 追加
+
+  if (answeredCount !== totalQuestions) {
+    alert(`すべての問題に解答してください (${answeredCount} / ${totalQuestions} 問 解答済み)`) // メッセージに件数を追加
+    isSubmitting.value = false
+    return
+  }
+
+  // 全問解答されているかチェック (より親切なUIにするならここで)
+  if (answersPayload.length !== questions.value.length) {
+    alert('すべての問題に解答してください。')
+    isSubmitting.value = false
+    return
+  }
+
+  try {
+    // 採点APIにPOSTリクエスト (認証ヘッダー付き)
+    const response = await axios.post(submitApiUrl, answersPayload, {
+      headers: authStore.authHeader,
+    })
+
+    // レスポンスから result_ids を取得
+    const resultIds = response.data.result_ids as number[]
+
+    // 結果ページに result_ids をクエリパラメータとして渡して遷移
+    router.push({ name: 'result', query: { ids: resultIds.join(',') } })
+  } catch (err) {
+    console.error('採点中にエラー:', err)
+    error.value = '採点中にエラーが発生しました。' // ユーザー向けエラー表示
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -66,6 +138,7 @@ onMounted(async () => {
                 value="A"
                 :id="'q' + question.id + '_a'"
                 required
+                v-model="selectedAnswers[question.id]"
               />
               <label :for="'q' + question.id + '_a'">(A) {{ question.option_a }}</label>
             </li>
@@ -75,6 +148,7 @@ onMounted(async () => {
                 :name="'question_' + question.id"
                 value="B"
                 :id="'q' + question.id + '_b'"
+                v-model="selectedAnswers[question.id]"
               />
               <label :for="'q' + question.id + '_b'">(B) {{ question.option_b }}</label>
             </li>
@@ -84,6 +158,7 @@ onMounted(async () => {
                 :name="'question_' + question.id"
                 value="C"
                 :id="'q' + question.id + '_c'"
+                v-model="selectedAnswers[question.id]"
               />
               <label :for="'q' + question.id + '_c'">(C) {{ question.option_c }}</label>
             </li>
@@ -93,6 +168,7 @@ onMounted(async () => {
                 :name="'question_' + question.id"
                 value="D"
                 :id="'q' + question.id + '_d'"
+                v-model="selectedAnswers[question.id]"
               />
               <label :for="'q' + question.id + '_d'">(D) {{ question.option_d }}</label>
             </li>
