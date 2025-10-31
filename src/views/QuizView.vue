@@ -9,10 +9,9 @@ const questions = ref<any[]>([]) // 型は後でちゃんと定義するのが�
 const loading = ref(true) // ローディング状態
 const error = ref<string | null>(null) // エラーメッセージ
 
-// APIのエンドポイントURL (Django開発サーバー)
-const apiUrl = 'http://127.0.0.1:8000/api/quiz/'
-
-const submitApiUrl = 'http://127.0.0.1:8000/api/quiz/submit/' // 採点APIのURL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const apiUrl = `${API_BASE_URL}/api/quiz/`
+const submitApiUrl = `${API_BASE_URL}/api/quiz/submit/`
 
 // 変更前: const selectedAnswers = ref<{[key: number]: string}>({})
 // 変更後: ref ではなく 'reactive' を使う
@@ -76,13 +75,6 @@ const submitAnswers = async () => {
 
   if (answeredCount !== totalQuestions) {
     alert(`すべての問題に解答してください (${answeredCount} / ${totalQuestions} 問 解答済み)`) // メッセージに件数を追加
-    isSubmitting.value = false
-    return
-  }
-
-  // 全問解答されているかチェック (より親切なUIにするならここで)
-  if (answersPayload.length !== questions.value.length) {
-    alert('すべての問題に解答してください。')
     isSubmitting.value = false
     return
   }

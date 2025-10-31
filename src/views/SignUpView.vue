@@ -10,8 +10,10 @@ const errorMessage = ref<string | null>(null)
 const isLoading = ref(false)
 const router = useRouter()
 
+// APIのベースURL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 // Django APIのエンドポイントを定義
-const signupApiUrl = 'http://127.0.0.1:8000/accounts/api/signup/'
+const signupApiUrl = `${API_BASE_URL}/accounts/api/signup/`
 
 const handleSignUp = async () => {
   if (password.value !== passwordConfirm.value) {

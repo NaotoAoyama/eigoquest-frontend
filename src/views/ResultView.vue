@@ -11,8 +11,10 @@ const error = ref<string | null>(null)
 const route = useRoute() // 現在のルート情報
 const authStore = useAuthStore()
 
+// APIのベースURL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 // 結果取得APIのURL
-const apiUrl = 'http://127.0.0.1:8000/api/results/'
+const apiUrl = `${API_BASE_URL}/api/results/`
 
 // URLのクエリパラメータ (?ids=...) から resultIds を取得
 const resultIdsQuery = computed(() => (route.query.ids as string) || '')
@@ -26,7 +28,9 @@ onMounted(async () => {
   }
 
   try {
-    const response = await axios.get(`${apiUrl}?ids=${resultIdsQuery.value}`, {
+    const response = await axios.get(apiUrl, {
+      // apiUrl は /api/results/
+      params: { ids: resultIdsQuery.value }, // クエリパラメータは params で渡すのが安全
       headers: authStore.authHeader, // 認証ヘッダー
     })
     results.value = response.data

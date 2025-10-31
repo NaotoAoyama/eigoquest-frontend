@@ -2,8 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-// Django APIのベースURL（環境変数から取得するのが望ましいが、一旦ハードコード）
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const useAuthStore = defineStore('auth', () => {
   // state（状態）
