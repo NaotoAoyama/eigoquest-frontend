@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # 1. Vue.js サービス (名前: "frontend")
+  frontend:
+    # 今いるディレクトリにある Dockerfile を使ってビルドする
+    build: .
+    # 起動コマンド (Dockerfile の CMD をそのまま使うので、ここでは省略可)
+    # command: npm run dev -- --host
+
+    # ボリューム (ローカルのコード変更をコンテナに即時反映させる)
+    # node_modules はローカルと共有しない (パフォーマンスのため)
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+    # ポート (ローカルPCの 5173 番ポートを、コンテナの 5173 番ポートに接続)
+    ports:
+      - '5173:5173'
+
+    # 環境変数ファイル (ローカルの .env.development を読み込む)
+    env_file:
+      - ./.env.development
+
+    # コンテナの標準入力を開いたままにする (Viteサーバーの安定動作のため)
+    stdin_open: true
+    tty: true

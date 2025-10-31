@@ -1,0 +1,27 @@
+{
+  "name": "EigoQuest Frontend (Dev Container)",
+
+  // 1. docker-compose.yml ファイルの場所を指定
+  "dockerComposeFile": ["../docker-compose.yml"],
+
+  // 2. 起動するサービス名を指定 (docker-compose.yml で定義した "frontend")
+  "service": "frontend",
+
+  // 3. VSCodeで開くワークスペースのパス
+  "workspaceFolder": "/app",
+
+  // 4. (任意) VSCodeに自動インストールさせたい拡張機能 (Vue + TypeScript用)
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Vue.volar", // Vue 3 のための主要な拡張機能
+        "dbaeumer.vscode-eslint", // ESLint
+        "esbenp.prettier-vscode" // Prettier
+      ]
+    }
+  },
+
+  // 5. コンテナ内のユーザーを 'node' に指定
+  // (node:20-slim イメージが提供するデフォルトの非rootユーザー)
+  "remoteUser": "node"
+}
