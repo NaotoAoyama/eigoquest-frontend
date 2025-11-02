@@ -23,5 +23,5 @@
 
   // 5. コンテナ内のユーザーを 'node' に指定
   // (node:20-slim イメージが提供するデフォルトの非rootユーザー)
-  "remoteUser": "node"
+  "remoteUser": "root"
 }
