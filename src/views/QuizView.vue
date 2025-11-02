@@ -60,16 +60,15 @@ const submitAnswers = async () => {
   error.value = null // 前のエラーをクリア
 
   // selectedAnswers をAPIが期待する形式に変換
-  // 変更前: const answersPayload = Object.entries(selectedAnswers.value)
-  // 変更後: reactive は .value が不要
-  const answersPayload = Object.entries(selectedAnswers)
-    .filter(([id, answer]) => answer) // 未選択のものを除外 (required属性があるので基本不要だが念のため)
-    .map(([id, answer]) => ({
-      question_id: parseInt(id), // IDを数値に
-      selected_answer: answer,
-    }))
 
-  const answeredCount = answersPayload.length
+  const answersPayload = questions.value.map((question) => ({
+    question_id: question.id,
+    selected_answer: selectedAnswers[question.id] || '', // 未解答の場合は空文字
+  }))
+
+  // 変更後 (解答済みのカウント方法も変更)
+  const answeredCount = answersPayload.filter((ans) => ans.selected_answer !== '').length
+
   const totalQuestions = questions.value.length
   console.log(`チェック: 解答済み ${answeredCount} / 全 ${totalQuestions} 問`) // 追加
 
