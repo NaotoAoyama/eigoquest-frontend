@@ -107,7 +107,6 @@ const totalCount = computed(() => results.value.length)
   max-width: 800px;
   margin: 20px auto;
   padding: 25px;
-  background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
 }
@@ -117,7 +116,6 @@ const totalCount = computed(() => results.value.length)
   font-weight: bold;
   margin-bottom: 20px;
   padding: 20px;
-  background-color: #f4f4f4;
 }
 .result-block {
   margin-bottom: 20px;
@@ -137,7 +135,6 @@ const totalCount = computed(() => results.value.length)
   white-space: pre-wrap;
 }
 .explanation {
-  background-color: #f9f9f9;
   padding: 10px;
   margin-top: 10px;
   border-left: 5px solid #ddd;

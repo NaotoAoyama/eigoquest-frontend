@@ -178,7 +178,6 @@ const submitAnswers = async () => {
   max-width: 800px;
   margin: 20px auto;
   padding: 25px;
-  background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
 }

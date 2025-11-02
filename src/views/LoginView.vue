@@ -53,7 +53,6 @@ const handleLogin = async () => {
   border: 1px solid #ccc;
   padding: 30px;
   border-radius: 8px;
-  background-color: #fff;
 }
 .form-box div {
   margin-bottom: 15px;
